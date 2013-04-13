@@ -1,0 +1,350 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Application xmlns="http://schemas.microsoft.com/windows/2009/Ribbon">
+  <Application.Commands>
+    <Command Name="cmdTabHome" Symbol="cmdTabHome" Id="30000" LabelTitle="Home"/>
+    <Command Name="cmdTabMain" Symbol="ID_CMD_TAB_MAIN" LabelTitle="Main"/>
+    <Command Name="cmdTabGroupTableTools" Symbol="ID_CMD_TABGROUP_TABLE" LabelTitle="Table Tools"/>
+    <Command Name="cmdTabDesign" Symbol="ID_CMD_TAB_DESIGN" LabelTitle="Design"/>
+    <Command Name="cmdTabLayout" Symbol="ID_CMD_TAB_LAYOUT" LabelTitle="Layout"/>
+    <Command Name="GroupClipboard" Symbol="cmdGroupClipboard" Id="30005" LabelTitle="Clipboard"/>
+    <Command Name="Paste" Symbol="cmdPaste" Id="30009" LabelTitle="Paste" TooltipTitle="Paste" TooltipDescription="Paste">
+      <Command.LargeImages>
+        <Image Id="4000">./set0070/32/Paste.bmp</Image>
+      </Command.LargeImages>
+    </Command>
+    <Command Name="Cut" Symbol="cmdCut" Id="30010" LabelTitle="Cut" TooltipTitle="Cut" TooltipDescription="Cut">
+      <Command.SmallImages>
+        <Image>./set0070/16/Cut.bmp</Image>
+      </Command.SmallImages>
+    </Command>
+    <Command Name="Copy" Symbol="cmdCopy" Id="30011" LabelTitle="Copy" TooltipTitle="Copy" TooltipDescription="Copy">
+      <Command.SmallImages>
+        <Image>./set0070/16/Copy.bmp</Image>
+      </Command.SmallImages>
+    </Command>
+    <Command Name="Undo" Symbol="cmdUndo" Id="30015" TooltipTitle="Undo" TooltipDescription="Undo">
+      <Command.LabelTitle>
+        <String Id="2020">Undo</String>
+      </Command.LabelTitle>
+      <Command.SmallImages>
+        <Image>./set0070/16/UndoS.bmp</Image>
+      </Command.SmallImages>
+    </Command>
+    <Command Name="FileMenu" Symbol="IDC_FILEMENU"/>
+    <Command Name="MRUList" Symbol="cmdMRUList" Id="30016"/>
+    <Command Name="QAT" Symbol="IDC_QAT"/>
+    <Command Name="New" Symbol="cmdNew" Id="57600" TooltipTitle="New (Ctrl+N)" TooltipDescription="Create a new document." Keytip="N">
+      <Command.LabelTitle>
+        <String Id="2021">New document</String>
+      </Command.LabelTitle>
+      <Command.LargeImages>
+        <Image Id="4016">./set0070/32/NewL.bmp</Image>
+      </Command.LargeImages>
+    </Command>
+    <Command Name="OpenFileMore" Symbol="IDC_OPENFILEMORE" Id="20500"/>
+    <Command Name="OpenFile" Symbol="cmdOpenFile" Id="57601" TooltipTitle="Open (Ctrl+O)" TooltipDescription="Open a document." Keytip="O">
+      <Command.LabelTitle>
+        <String Id="2022">Open File</String>
+      </Command.LabelTitle>
+      <Command.LabelDescription>
+        <String Id="2023">Open a file from the local system or network share.</String>
+      </Command.LabelDescription>
+      <Command.LargeImages>
+        <Image Id="4017">./set0070/32/OpenFileL.bmp</Image>
+      </Command.LargeImages>
+    </Command>
+    <Command Name="OpenFreeMind" Symbol="cmdOpenFreeMind" Id="32774">
+      <Command.LabelTitle>
+        <String Id="2024">Open FreeMind</String>
+      </Command.LabelTitle>
+      <Command.LabelDescription>
+        <String Id="2025">Open a FreeMind file from the local system or network share.</String>
+      </Command.LabelDescription>
+      <Command.LargeImages>
+        <Image Id="4018">./set0070/32/OpenFileL.bmp</Image>
+      </Command.LargeImages>
+    </Command>
+    <Command Name="Save" Symbol="cmdSave" Id="57603" TooltipTitle="Save (Ctrl+S)" TooltipDescription="Save the current document." Keytip="S">
+      <Command.LabelTitle>
+        <String Id="2026">Save</String>
+      </Command.LabelTitle>
+      <Command.LargeImages>
+        <Image Id="4019">./set0070/32/SaveL.bmp</Image>
+      </Command.LargeImages>
+    </Command>
+    <Command Name="SaveAs" Symbol="cmdSaveAs" Id="57604" TooltipDescription="Save the current document with a new name.">
+      <Command.LabelTitle>
+        <String Id="2027">Save As</String>
+      </Command.LabelTitle>
+      <Command.LargeImages>
+        <Image Id="4020">./set0070/32/SaveAsL.bmp</Image>
+      </Command.LargeImages>
+    </Command>
+    <Command Name="PrintMore" Symbol="IDC_PRINTMORE" Id="20501"/>
+    <Command Name="Print" Symbol="cmdPrint" Id="57607">
+      <Command.LabelTitle>
+        <String Id="2033">Print</String>
+      </Command.LabelTitle>
+      <Command.LabelDescription>
+        <String Id="2028">Send the document to the currently selected default printer.</String>
+      </Command.LabelDescription>
+      <Command.LargeImages>
+        <Image Id="4021">./set0070/32/PrintL.bmp</Image>
+      </Command.LargeImages>
+    </Command>
+    <Command Name="PrintSetup" Symbol="cmdPrintSetup" Id="57606">
+      <Command.LabelTitle>
+        <String Id="2029">Print Setup</String>
+      </Command.LabelTitle>
+      <Command.LabelDescription>
+        <String Id="2030">Change the page layout or other printer settings.</String>
+      </Command.LabelDescription>
+      <Command.LargeImages>
+        <Image Id="4022">./set0070/32/PrintL.bmp</Image>
+      </Command.LargeImages>
+    </Command>
+    <Command Name="cmdVersionInfo" Symbol="cmdVersionInfo" Id="20502">
+      <Command.LabelTitle>
+        <String Id="211">Version Info</String>
+      </Command.LabelTitle>
+      <Command.LargeImages>
+        <Image Id="4024">./set0070/32/TouchMindL.bmp</Image>
+      </Command.LargeImages>
+    </Command>
+    <Command Name="Exit" Symbol="cmdExit" Id="57602" TooltipDescription="Exit the application." Keytip="X">
+      <Command.LabelTitle>
+        <String Id="2031">Exit TouchMind</String>
+      </Command.LabelTitle>
+      <Command.LargeImages>
+        <Image>./set0070/32/ExitL.bmp</Image>
+      </Command.LargeImages>
+    </Command>
+    <Command Name="GroupBasicOperationGroup" Symbol="cmdGroupBasicOperationGroup" Id="30006" LabelTitle="Basic Operations"/>
+    <Command Name="cmdContextMap1" Comment="the Context Map for Context 1" Symbol="IDC_CMD_CONTEXTMAP1"/>
+    <Command Name="EditNode" Symbol="cmdEditNode" Id="31001" TooltipTitle="Edit text" TooltipDescription="Edit text">
+      <Command.LabelTitle>
+        <String Id="3031">Edit text</String>
+      </Command.LabelTitle>
+      <Command.LargeImages>
+        <Image>./set0070/64/EditText64x64.bmp</Image>
+      </Command.LargeImages>
+    </Command>
+    <Command Name="DeleteNode" Symbol="cmdDeleteNode" Id="31002" TooltipTitle="Delete this node" TooltipDescription="Delete this node">
+      <Command.LabelTitle>
+        <String Id="3032">Delete this node</String>
+      </Command.LabelTitle>
+    </Command>
+    <Command Name="CreateChildNode" Symbol="cmdCreateChildNode" Id="31003" TooltipTitle="Create a child node" TooltipDescription="Create a child node">
+      <Command.LabelTitle>
+        <String Id="3033">Create a child node</String>
+      </Command.LabelTitle>
+      <Command.LargeImages>
+        <Image>./set0070/64/NewNode64x64.bmp</Image>
+      </Command.LargeImages>
+    </Command>
+    <Command Name="cmdCreateLink" Symbol="cmdCreateLink" LabelTitle="Create a link" TooltipTitle="Create a link" TooltipDescription="Create a link">
+      <Command.LargeImages>
+        <Image>./set0070/64/Link.bmp</Image>
+      </Command.LargeImages>
+    </Command>
+    <Command Name="cmdDeleteLink" Symbol="cmdDeleteLink" LabelTitle="Delete this link" TooltipTitle="Delete this link" TooltipDescription="Delete this link"/>
+    <Command Name="cmdExpandNodes" Symbol="cmdExpandNodes">
+      <Command.LabelTitle>
+        <String Id="209">Expand nodes</String>
+      </Command.LabelTitle>
+    </Command>
+    <Command Name="cmdCollapseNodes" Symbol="cmdCollapseNodes">
+      <Command.LabelTitle>
+        <String Id="210">Collapse nodes</String>
+      </Command.LabelTitle>
+    </Command>
+    <Command Name="cmdFontControlGroup" Symbol="cmdFontControlGroup">
+      <Command.LabelTitle>
+        <String Id="205">Font</String>
+      </Command.LabelTitle>
+    </Command>
+    <Command Name="cmdFontControl" Symbol="cmdFontControl" LabelTitle="asdfsadf">
+      <Command.Keytip>
+        <String Id="206">F</String>
+      </Command.Keytip>
+    </Command>
+    <Command Name="cmdBackgroundColorGroup" Symbol="cmdBackgroundColorGroup">
+      <Command.LabelTitle>
+        <String Id="207">Node</String>
+      </Command.LabelTitle>
+    </Command>
+    <Command Name="cmdBackgroundColor" Symbol="cmdBackgroundColor">
+      <Command.LabelTitle>
+        <String Id="208">Background Color</String>
+      </Command.LabelTitle>
+      <Command.LargeImages>
+        <Image>./set0070/32/BackgroundColor.bmp</Image>
+      </Command.LargeImages>
+    </Command>
+    <Command Name="cmdNodeShape" Symbol="cmdNodeShape" LabelTitle="Shape"/>
+    <Command Name="cmdLineAttributeGroup" Symbol="cmdLineAttributeGroup" LabelTitle="Stroke Attributes"/>
+    <Command Name="cmdLineColor" Symbol="cmdLineColor" LabelTitle="Color"/>
+    <Command Name="cmdLineWidth" Symbol="cmdLineWidth" LabelTitle="Width"/>
+    <Command Name="cmdLineEdgeStyle" Symbol="cmdLineEdgeStyle" LabelTitle="Edge Style"/>
+    <Command Name="cmdLineStyle" Symbol="cmdLineStyle" LabelTitle="Style"/>
+  </Application.Commands>
+  <Application.Views>
+    <Ribbon>
+      <Ribbon.ApplicationMenu>
+        <ApplicationMenu CommandName="FileMenu">
+          <ApplicationMenu.RecentItems>
+            <RecentItems CommandName="MRUList" MaxCount="16" EnablePinning="false"/>
+          </ApplicationMenu.RecentItems>
+          <MenuGroup Class="MajorItems">
+            <Button CommandName="New"/>
+            <SplitButton CommandName="OpenFileMore">
+              <SplitButton.ButtonItem>
+                <Button CommandName="OpenFile"/>
+              </SplitButton.ButtonItem>
+              <SplitButton.MenuGroups>
+                <MenuGroup Class="MajorItems">
+                  <Button CommandName="OpenFile"/>
+                  <Button CommandName="OpenFreeMind"/>
+                </MenuGroup>
+              </SplitButton.MenuGroups>
+            </SplitButton>
+            <Button CommandName="Save"/>
+            <Button CommandName="SaveAs"/>
+          </MenuGroup>
+          <MenuGroup Class="MajorItems">
+            <SplitButton CommandName="PrintMore">
+              <SplitButton.ButtonItem>
+                <Button CommandName="Print"/>
+              </SplitButton.ButtonItem>
+              <SplitButton.MenuGroups>
+                <MenuGroup Class="MajorItems">
+                  <Button CommandName="PrintSetup"/>
+                  <Button CommandName="Print"/>
+                </MenuGroup>
+              </SplitButton.MenuGroups>
+            </SplitButton>
+          </MenuGroup>
+          <MenuGroup Class="MajorItems">
+            <Button CommandName="cmdVersionInfo"/>
+          </MenuGroup>
+          <MenuGroup Class="MajorItems">
+            <Button CommandName="Exit"/>
+          </MenuGroup>
+        </ApplicationMenu>
+      </Ribbon.ApplicationMenu>
+      <Ribbon.QuickAccessToolbar>
+        <QuickAccessToolbar CommandName="QAT"/>
+      </Ribbon.QuickAccessToolbar>
+      <Ribbon.ContextualTabs>
+        <TabGroup CommandName="cmdTabGroupTableTools">
+          <Tab CommandName="cmdTabDesign">
+            <Group CommandName="GroupClipboard" SizeDefinition="BigButtonsAndSmallButtonsOrInputs">
+              <ControlGroup>
+                <Button CommandName="Paste"/>
+              </ControlGroup>
+              <ControlGroup>
+                <Button CommandName="Cut"/>
+                <Button CommandName="Copy"/>
+                <Button CommandName="Undo"/>
+              </ControlGroup>
+            </Group>
+          </Tab>
+          <Tab CommandName="cmdTabLayout">
+            <Group CommandName="cmdBackgroundColorGroup" SizeDefinition="TwoButtons">
+              <Button CommandName="PrintSetup"/>
+              <Button CommandName="Print"/>
+            </Group>
+          </Tab>
+        </TabGroup>
+      </Ribbon.ContextualTabs>
+      <Ribbon.Tabs>
+        <Tab CommandName="cmdTabMain">
+          <Group CommandName="GroupBasicOperationGroup" SizeDefinition="ThreeButtons">
+            <Button CommandName="CreateChildNode"/>
+            <Button CommandName="EditNode"/>
+            <ToggleButton CommandName="cmdCreateLink"/>
+          </Group>
+        </Tab>
+        <Tab CommandName="cmdTabHome">
+          <Group CommandName="GroupClipboard" SizeDefinition="BigButtonsAndSmallButtonsOrInputs">
+            <ControlGroup>
+              <Button CommandName="Paste"/>
+            </ControlGroup>
+            <ControlGroup>
+              <Button CommandName="Cut"/>
+              <Button CommandName="Copy"/>
+              <Button CommandName="Undo"/>
+            </ControlGroup>
+          </Group>
+          <Group CommandName="GroupBasicOperationGroup" SizeDefinition="ThreeButtons">
+            <Button CommandName="CreateChildNode"/>
+            <Button CommandName="EditNode"/>
+            <ToggleButton CommandName="cmdCreateLink"/>
+          </Group>
+          <Group CommandName="cmdBackgroundColorGroup" SizeDefinition="TwoButtons">
+            <DropDownGallery CommandName="cmdNodeShape" ItemHeight="64" ItemWidth="64" TextPosition="Hide">
+              <DropDownGallery.MenuLayout>
+                <VerticalMenuLayout Gripper="None"/>
+              </DropDownGallery.MenuLayout>
+            </DropDownGallery>
+            <DropDownColorPicker CommandName="cmdBackgroundColor" ChipSize="Large"/>
+          </Group>
+          <Group CommandName="cmdFontControlGroup" SizeDefinition="OneFontControl">
+            <FontControl CommandName="cmdFontControl" FontType="RichFont" ShowVerticalFonts="false"/>
+          </Group>
+          <Group CommandName="cmdLineAttributeGroup" SizeDefinition="FourButtons">
+            <DropDownColorPicker CommandName="cmdLineColor" ChipSize="Large"/>
+            <DropDownGallery CommandName="cmdLineWidth" ItemHeight="24" ItemWidth="64" TextPosition="Hide">
+              <DropDownGallery.MenuLayout>
+                <VerticalMenuLayout Gripper="None"/>
+              </DropDownGallery.MenuLayout>
+            </DropDownGallery>
+            <DropDownGallery CommandName="cmdLineEdgeStyle" ItemHeight="24" ItemWidth="64" TextPosition="Hide">
+              <DropDownGallery.MenuLayout>
+                <VerticalMenuLayout Gripper="None"/>
+              </DropDownGallery.MenuLayout>
+            </DropDownGallery>
+            <DropDownGallery CommandName="cmdLineStyle" ItemHeight="24" ItemWidth="64" TextPosition="Hide">
+              <DropDownGallery.MenuLayout>
+                <VerticalMenuLayout Gripper="None"/>
+              </DropDownGallery.MenuLayout>
+            </DropDownGallery>
+          </Group>
+        </Tab>
+      </Ribbon.Tabs>
+    </Ribbon>
+    <ContextPopup>
+      <ContextPopup.MiniToolbars>
+        <MiniToolbar Name="myMiniToolbar">
+          <MenuGroup>
+            <FontControl CommandName="cmdFontControl" ShowVerticalFonts="false"/>
+          </MenuGroup>
+        </MiniToolbar>
+      </ContextPopup.MiniToolbars>
+      <ContextPopup.ContextMenus>
+        <ContextMenu Name="ContextMenu1">
+          <MenuGroup>
+            <Button CommandName="EditNode"/>
+            <Button CommandName="CreateChildNode"/>
+            <Button CommandName="DeleteNode"/>
+            <Button CommandName="cmdExpandNodes"/>
+            <Button CommandName="cmdCollapseNodes"/>
+          </MenuGroup>
+          <MenuGroup>
+            <ToggleButton CommandName="cmdCreateLink"/>
+            <Button CommandName="cmdDeleteLink"/>
+          </MenuGroup>
+          <MenuGroup>
+            <Button CommandName="Cut"/>
+            <Button CommandName="Copy"/>
+            <Button CommandName="Paste"/>
+            <Button CommandName="Undo"/>
+          </MenuGroup>
+        </ContextMenu>
+      </ContextPopup.ContextMenus>
+      <ContextPopup.ContextMaps>
+        <ContextMap CommandName="cmdContextMap1" ContextMenu="ContextMenu1" MiniToolbar="myMiniToolbar"/>
+      </ContextPopup.ContextMaps>
+    </ContextPopup>
+  </Application.Views>
+</Application>

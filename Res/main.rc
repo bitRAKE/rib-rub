@@ -1,0 +1,45 @@
+
+#include "..\..\..\TOOLS\RESOURCE.H"
+
+#include "ribbon.rc"
+
+1 ICON "ribbon.ico"
+
+1 RT_MANIFEST "manifest.xml"
+
+1 VERSIONINFO
+ FILEVERSION     0,0,0,1
+ PRODUCTVERSION  0,0,0,1
+ FILEFLAGSMASK   VS_FFI_FILEFLAGSMASK
+ FILEFLAGS       VS_FF_PRERELEASE | VS_FF_PRIVATEBUILD | VS_FF_SPECIALBUILD // | VS_FF_DEBUG
+ FILEOS          VOS_NT_WINDOWS32
+ FILETYPE        VFT_APP
+ FILESUBTYPE     VFT2_UNKNOWN 
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904B0" // Lang=US English, CharSet=Unicode
+        BEGIN
+            VALUE "CompanyName",     "dank.orb™ Production"
+            VALUE "LegalCopyright",  "©2013 Rickey Bowers Jr"
+            VALUE "LegalTrademarks", "CC BY-SA 3.0"
+            VALUE "ProductName",     "The Best Brand"
+            VALUE "ProductVersion",  "0.0.0.1"
+            VALUE "Comments",        "Attribution-ShareAlike 3.0"
+            VALUE "Developer",       "bitRAKE™"
+            VALUE "InternalName",    "rib-bib"
+            VALUE "PrivateBuild",    "Just those who have it."
+            VALUE "SpecialBuild",    "Because I could."
+            VALUE "FileDescription", "Application implementing something."
+            VALUE "FileVersion",     "0.0.0.1"
+            VALUE "OriginalFilename","do-run-run.exe"
+            VALUE "Build",           "March 2013"
+            VALUE "Support",         "Fix-it-yourself.com"
+            VALUE "Users",           "Unlimited"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END

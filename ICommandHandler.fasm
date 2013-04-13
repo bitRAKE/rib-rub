@@ -1,0 +1,107 @@
+if used ICommandHandler
+
+    align 64
+ICommandHandler dq ICommandHandler.vtbl
+
+.objects \
+    dd 1 ; fake first instance
+    dd 'FASM'
+
+.vtbl dq \
+    .QueryInterface,\
+    .AddRef,\
+    .Release,\
+    .Execute,\
+    .UpdateProperty
+
+    align 64
+.QueryInterface:
+    test r8,r8
+    jz .E_POINTER
+    ; compare IIDs to those supported
+    GUID.CMP rdx,IID_IUICommandHandler
+    jz @F
+    GUID.CMP rdx,IID_IUnknown
+    jz @F
+    mov eax,$80004002 ; E_NOINTERFACE
+    retn
+
+@@: mov [r8],rcx
+    ; mov rax,[rcx]
+    ; call [rax+IUnknown.AddRef]
+    mov eax,1
+    lock xadd [.objects],eax
+    xor eax,eax
+    retn
+
+.E_POINTER:
+    mov eax,$80004003 ; E_POINTER
+    retn
+
+
+.AddRef:
+    mov eax,1
+    lock xadd [.objects],eax
+    add eax,1
+    retn
+
+
+.Release:
+    or eax,-1
+    lock xadd [.objects],eax
+    sub eax,1
+
+    ; free global resources if zero
+
+    retn
+
+;-------------------------------------------------------------------------------
+
+ICommandHandler.Execute:
+    virtual at rbp-.frame
+			rq 4
+	.4		rq 1
+	.5		rq 1
+	.frame = NOT 15 AND ($-$$+15)
+	    rb $$+.frame-$ ; stack alignment
+	.RBP rq 1
+	.ret rq 1
+	.this			     rq 1 ;*ICommandHandler   rcx
+	.nCmdID 		     rq 1 ; UINT	      rdx
+	.verb			     rq 1 ; UI_EXECUTIONVERB  r8
+	.key			     rq 1 ;*PROPERTYKEY       r9
+	.ppropvarValue		     rq 1 ;*PROPVARIANT
+	.pCommandExecutionProperties rq 1 ;*IUISimplePropertySet
+    end virtual
+;    enter .frame,0
+    ;
+    ; respond to nCmdIDs
+    ;
+;    leave
+    mov eax,$80004001 ; E_NOTIMPL
+    retn
+
+
+
+ICommandHandler.UpdateProperty:
+    virtual at rbp-.frame
+			rq 4
+	.4		rq 1
+	.5		rq 1
+	.frame = NOT 15 AND ($-$$+15)
+	    rb $$+.frame-$ ; stack alignment
+	.RBP rq 1
+	.ret rq 1
+	.this		      rq 1 ;*ICommandHandler  rcx
+	.nCmdID 	      rq 1 ; UINT	      rdx
+	.key		      rq 1 ; REFPROPERTYKEY   r8
+	.ppropvarCurrentValue rq 1 ;*PROPVARIANT      r9
+	.ppropvarNewValue     rq 1 ;*PROPVARIANT
+    end virtual
+
+    mov eax,$80004001 ; E_NOTIMPL
+    retn
+
+
+
+end if ; used ICommandHandler

@@ -1,0 +1,643 @@
+include 'main.finc'
+;-------------------------------------------------------------------------------
+PTR equ dq
+
+    align 64 ; align GUIDs
+include 'IUnknown.finc' ; COM base
+include 'UIRibbon.finc' ; Ribbon server framework interfaces
+
+
+; Host Interfaces
+include 'IApplication.fasm'
+include 'ICommandHandler.fasm'
+include 'ICollectionChangedEvent.fasm'
+
+
+    align 64
+class WNDCLASSEX class..,3,WndProc,0,0,HINSTANCE,0,0,0,0,CLASSNAME,0
+
+    align 64
+
+g_pCommandHandler IUICommandHandler dq ICommandHandler
+g_pApplication	  IUIApplication    dq IApplication
+
+g_pRibbon         IUIRibbon         dq ?
+g_pFramework	  IUIFramework	    dq ?
+
+
+
+hMSFTEdit rq 1 ; DLL handle for FreeLibrary
+hWndMain rq 1 ; Main window handle
+hWndEdit rq 1 ; Edit control handle, valid after main creation
+hHk rq 1 ; hook handle
+uRibbon.H dd ?,? ; Latest ribbon height, global just in case
+
+;===============================================================================
+align 64 ;--------------------------------------------------------CONSTANT-DATA-
+;===============================================================================
+CLASSNAME du 'dank.orb',0
+label _title word at CLASSNAME ; title is dynamic, just start somewhere
+
+FASM_RIBBON du "FASM_RIBBON",0
+pszFile.Settings du "ribbon.settings.xml",0
+
+; Single universal handler based on top nibble of command Id (=type):
+Types_that_get_handlers: dw \
+(1 shl UI_COMMANDTYPE_UNKNOWN) or \          ; The type of command is not known.
+(1 shl UI_COMMANDTYPE_GROUP) or \            ; Group
+(1 shl UI_COMMANDTYPE_ACTION) or \           ; Button, Help Button
+(1 shl UI_COMMANDTYPE_ANCHOR) or \           ; Application Menu, Drop-Down Button, Split Button, Tab
+(1 shl UI_COMMANDTYPE_CONTEXT) or \          ; Tab Group
+(1 shl UI_COMMANDTYPE_COLLECTION) or \       ; Combo Box, Drop-Down Gallery, In-Ribbon Gallery, Split Button Gallery
+(1 shl UI_COMMANDTYPE_COMMANDCOLLECTION) or \; Drop-Down Gallery, In-Ribbon Gallery, Quick Access Toolbar, Split Button Gallery
+(1 shl UI_COMMANDTYPE_DECIMAL) or \          ; Spinner
+(1 shl UI_COMMANDTYPE_BOOLEAN) or \          ; Toggle Button, Check Box
+(1 shl UI_COMMANDTYPE_FONT) or \             ; Font Control
+(1 shl UI_COMMANDTYPE_RECENTITEMS) or \      ; Recent Items
+(1 shl UI_COMMANDTYPE_COLORANCHOR) or \      ; Drop-Down Color Picker
+(1 shl UI_COMMANDTYPE_COLORCOLLECTION)       ; {not supported by any framework controls}
+;^--> change to 1 if this type needs a handler
+
+_MSFTEDIT du "msftedit",0
+_RE_CLASS du "RICHEDIT50W",0
+
+xtext du "Right-click for context menu.",0
+
+GetLastError.Title du "GetLastError:",0
+;===============================================================================
+align 64 ;----------------------------------------------------------------------
+;===============================================================================
+
+Window:
+        .W = 400
+        .H = 256
+
+
+@Welcome...: entry $
+    virtual at rbp-.frame
+	    rq 4
+	.4  rq 1
+	.5  rq 1
+	.6  rq 1
+	.7  rq 1
+	.8  rq 1
+	.9  rq 1
+	.A  rq 1
+	.B  rq 1
+	.frame = NOT 15 AND ($-$$+15)
+	    rb $$+.frame-$ ; stack alignment
+	.RBP	rq 1
+	.ret	rq 1
+	.RCX	rq 1
+	.RDX	rq 1
+	.R8	rq 1
+	.R9	rq 1
+    end virtual
+    mov rbp,$00003FFF00000008		; INITCOMMONCONTROLSEX trickery
+    enter .frame,0                      ;
+    mov ecx,ebp 			; #32#
+    call [comctl32.InitCommonControlsEx];
+    lea ecx,[rax-1]
+    jrcxz @F
+
+.Error:
+    xor ecx,ecx
+    call MessageBox.LastError
+    jmp .exit
+
+@@: ;xor ecx,ecx
+    mov edx,1010b			; COINIT_APARTMENTTHREADED or COINIT_SPEED_OVER_MEMORY
+    call [ole32.CoInitializeEx]
+    test eax,eax
+    js .Error
+
+    ; riched20.dll ;
+    ; msftedit.dll ; MSFTEDIT_CLASS
+    lea ecx,[_MSFTEDIT]
+    call [kernel32.LoadLibraryW]
+    add [hMSFTEdit],rax
+    jz .Error
+
+    xor ecx,ecx
+    mov edx,32512 ; IDC_ARROW
+    call [user32.LoadCursorW]
+    mov [class.hCursor],rax ; HCURSOR:HANDLE:PVOID
+
+; load application icons
+
+    push 32
+    mov ecx,HINSTANCE
+    mov edx,IDI_APPLICATION
+    mov r8d,1 ; IMAGE_ICON
+    pop r9
+    mov [.4],r9
+    mov [.5],LR_CREATEDIBSECTION
+    call [user32.LoadImageW]
+    mov [class.hIcon],rax
+
+    push 16
+    mov ecx,HINSTANCE
+    mov edx,IDI_APPLICATION
+    mov r8d,1 ; IMAGE_ICON
+    pop r9
+    mov [.4],r9
+    mov [.5],LR_CREATEDIBSECTION
+    call [user32.LoadImageW]
+    mov [class.hIconSm],rax
+
+    mov ecx,class ; #32#
+    call [user32.RegisterClassExW]
+
+    xor edi,edi
+    pxor xmm7,xmm7
+
+STYLE  = $16CF0000 ;WS_VISIBLE or WS_SIZEBOX or WS_SYSMENU or WS_MAXIMIZEBOX or WS_MINIMIZEBOX
+STYLEX = $00050314 ;WS_EX_APPWINDOW or WS_EX_TOOLWINDOW or WS_EX_WINDOWEDGE
+    mov ecx,STYLEX
+    xchg edx,eax ; use ATOM
+    lea r8,[_title]
+    mov r9d,STYLE
+    mov [.4],CW_USEDEFAULT
+    mov [.5],CW_USEDEFAULT
+    mov [.6],Window.W
+    mov [.7],Window.H
+    movdqa dqword [.8],xmm7
+    mov [.A],HINSTANCE
+    mov [.B],rdi
+    call [user32.CreateWindowExW]
+    test eax,eax
+    jz .Error
+    mov [hWndMain],rax
+
+    lea esi,[.4] ; MSG
+    jmp @F
+.mloop:
+    mov ecx,esi ; #32#
+    call [user32.TranslateMessage]
+    mov ecx,esi ; #32#
+    call [user32.DispatchMessageW]
+@@: mov ecx,esi ; #32#
+    mov edx,edi
+    mov r8,rdi
+    mov r9,rdi
+    call [user32.GetMessageW]
+    test eax,eax ; -,0,+
+    jg .mloop
+
+    xchg ecx,eax
+    and eax,6 ; ERROR_INVALID_HANDLE
+.exit:
+    call [ole32.CoUninitialize]
+    xor eax,eax
+    call [kernel32.ExitProcess]
+    int3
+
+
+;-------------------------------------------------------------------------------
+; hWnd of parent window in RCX
+; return error code put in RAX
+MessageBox.LastError:
+    mov rbp,rsp
+    and rsp,-16 ; force stack align
+    xor edx,edx
+    push rcx rdx rdx rdx rdx rsp rdx rdx rdx rdx
+    virtual at rsp
+		  rq 4
+	.lpBuffer rq 1 ; three
+	.nSize	  rq 1 ;   params for
+	.va_list  rq 1 ;     FormatMessage
+	.buf	  rq 1
+	.err	  rq 1
+	.hWnd	  rq 1
+    end virtual
+
+    call [kernel32.GetLastError]
+    mov [.err],rax
+
+    mov ecx,FORMAT_MESSAGE_ALLOCATE_BUFFER or FORMAT_MESSAGE_FROM_SYSTEM
+    xor edx,edx
+    xchg r8d,eax
+    mov r9,rdx ; LANG_NEUTRAL
+    add [.lpBuffer],16 ; lpBuffer,0,0 already on stack
+    call [kernel32.FormatMessageW]
+
+    mov rcx,[.hWnd]
+    mov rdx,[.buf]
+    lea r8,[GetLastError.Title]
+    mov r9d,MB_ICONERROR + MB_OK
+    call MessageBox.CBT
+
+    mov rcx,[.buf]
+    call [kernel32.LocalFree]
+    mov rax,[.err]
+    mov rsp,rbp
+    retn
+
+
+    align 64
+MessageBox.CBT: ; hWnd,lpText,lpCaption,uType
+    jrcxz @F ; if HWND_DESKTOP - let windows sort it out
+    push r9 r8 rdx rcx rcx rcx rcx rcx rcx
+    call [kernel32.GetCurrentThreadId]
+    mov ecx,5 ; WH_CBT
+    lea edx,[CBTProc]
+    xor r8,r8
+    mov r9,rax
+    call [user32.SetWindowsHookExW]
+    mov [hHk],rax ; doesn't matter if it fails, we need to continue
+    pop rax rax rax rax rax rcx rdx r8 r9
+@@: jmp [user32.MessageBoxW]
+
+
+CBTProc: ; nCode,hChild,lpCBTact
+    enter .frame,0
+    cmp ecx,HCBT_ACTIVATE
+    jz .HCBT_ACTIVATE
+    mov r9,r8
+    mov r8,rdx
+    mov rdx,rcx
+    mov rcx,[hHk]
+    call [user32.CallNextHookEx]
+    xor eax,eax
+    leave
+    retn
+; any error results in unhooking and just presenting without centering
+.HCBT_ACTIVATE:
+    virtual at rbp-.frame
+		rq 4
+	.4	rq 1
+	.5	rq 1
+	.hChild equ .5
+	.rChild  RECT ?,?,?,?
+	.rParent RECT ?,?,?,?
+	.frame = NOT 15 AND ($-$$+15)
+    end virtual
+    mov [.hChild],rdx
+
+    mov rcx,rdx
+    lea rdx,[.rChild]
+    call [user32.GetWindowRect]
+    test eax,eax
+    jz @F
+
+    mov rcx,[.hChild]
+    call [user32.GetParent]
+    xchg rcx,rax
+    jrcxz @F
+    lea rdx,[.rParent]
+    call [user32.GetWindowRect]
+    test eax,eax
+    jz @F
+    mov r9d,[.rChild.right]
+    mov eax,[.rChild.bottom]
+    mov edx,[.rParent.right]
+    mov r8d,[.rParent.bottom]
+    sub r9d,[.rChild.left] ; width
+    sub eax,[.rChild.top] ; height
+    add edx,[.rParent.left]
+    add r8d,[.rParent.top]
+    sub edx,r9d
+    sub r8d,eax
+    sar edx,1 ; start.x
+    sar r8d,1 ; start.y
+
+    mov rcx,[.hChild]
+    mov [.4],rax
+    and [.5],0 ; FALSE
+    call [user32.MoveWindow]
+
+@@: mov rcx,[hHk]
+    call [user32.UnhookWindowsHookEx]
+    xor eax,eax
+    leave
+    retn
+
+;-------------------------------------------------------------------------------
+;-------------------------------------------------------------------------------
+
+WndProc: ; hWnd,uMsg,wParam,lParam = rcx,rdx,r8,r9
+    cmp edx,WM_ERASEBKGND
+    jz .WM_ERASEBKGND
+    cmp edx,WM_SETFOCUS
+    jz .WM_SETFOCUS
+    cmp edx,WM_GETMINMAXINFO
+    jz .WM_GETMINMAXINFO
+    cmp edx,WM_SIZE
+    jz .WM_SIZE
+    cmp edx,WM_CONTEXTMENU
+    jz .WM_CONTEXTMENU
+    cmp edx,WM_DESTROY
+    jz .WM_DESTROY
+    cmp edx,WM_CREATE
+    jz .WM_CREATE
+    jmp [user32.DefWindowProcW]
+
+
+WndProc.WM_ERASEBKGND: ; HANDLED
+    push -1
+    pop rax
+WndProc.WM_COMMAND:
+    retn
+
+
+WndProc.WM_SETFOCUS:
+    enter 32,0
+    ; rcx = hWnd
+    call [user32.SetFocus]
+    xor eax,eax
+    leave
+    retn
+
+
+WndProc.WM_GETMINMAXINFO:
+    virtual at r9
+      .mmi MINMAXINFO
+    end virtual
+    xor eax,eax
+    mov [.mmi.ptMinTrackSize.x],Window.W
+    mov [.mmi.ptMinTrackSize.y],Window.H
+    retn
+
+
+WndProc.WM_SIZE:
+    virtual at rbp-.frame
+		 rq 4
+	.4	 rq 1
+	.5	 rq 1
+	.frame = NOT 15 AND ($-$$+15)
+		 rb $$+.frame-$ ; stack alignment
+    end virtual
+    enter .frame,0
+    mov rax,r9
+    shr eax,16 ; height
+
+    mov rcx,[hWndEdit]
+    xor edx,edx          ; left edge
+    mov r8d,[uRibbon.H]  ; top
+    sub eax,r8d ;[uRibbon.H] ;rc.bottom - m_uHeight
+    movzx r9,r9w         ; width = right edge++
+    mov dword[.4],eax
+    or [.5],-1
+    call [user32.MoveWindow]
+    xor eax,eax
+    leave
+    retn
+
+
+WndProc.WM_CONTEXTMENU:
+    virtual at rbp-.frame
+		 rq 4
+	.xy..	 rq 1
+	.pContextualUI IUIContextualUI rq 1
+	.frame = NOT 15 AND ($-$$+15)
+		 rb $$+.frame-$ ; stack alignment
+    end virtual
+    enter .frame,0
+    ; r8 ; hWnd of target
+    mov [.xy..],r9 ; x,y,?,?
+
+    mov rcx,[g_pFramework]
+    mov rax,[rcx]
+    ; context should be based on program state, or target (window)
+    mov edx,[IApplication.GetCurrentContext]
+    lea r8,[IID_IUIContextualUI]
+    lea r9,[.pContextualUI]
+    call [rax+g_pFramework.GetView]
+    test eax,eax
+    js .E_FAIL
+
+    mov rcx,[.pContextualUI]
+    mov rax,[rcx]
+    movsx edx,word[.xy..]
+    movsx r8,word[2+.xy..]
+    call [rax+.pContextualUI.ShowAtLocation]
+
+    mov rcx,[.pContextualUI]
+    mov rax,[rcx]
+    call [rax+.pContextualUI.Release]
+    xor eax,eax
+.E_FAIL:
+    leave
+    retn
+
+
+WndProc.WM_DESTROY:
+    virtual at rbp-.frame
+		 rq 4
+	.4	 rq 1
+	.5	 rq 1
+	.6	 rq 1
+	.7	 rq 1
+	.frame = NOT 15 AND ($-$$+15)
+		 rb $$+.frame-$ ; stack alignment
+	.RBP	 rq 1
+	.ret	 rq 1
+	.hWnd    rq 1
+	.uMsg	 rq 1
+	.wParam  rq 1
+	.lParam  rq 1
+    end virtual
+    enter .frame,0
+    mov [.hWnd],rcx
+
+    mov rcx,[g_pFramework]
+    mov rax,[rcx]
+    call [rax+g_pFramework.Destroy]
+
+    mov rcx,[g_pFramework]
+    mov rax,[rcx]
+    call [rax+g_pFramework.Release]
+
+    mov rcx,[g_pApplication]
+    mov rax,[rcx]
+    call [rax+g_pApplication.Release]
+
+    mov rcx,[g_pCommandHandler]
+    mov rax,[rcx]
+    call [rax+g_pCommandHandler.Release]
+
+    mov rcx,[hWndEdit]
+    call [user32.DestroyWindow]
+
+    xor ecx,ecx
+    call [user32.PostQuitMessage]
+    xor eax,eax
+    leave
+    retn
+
+
+WndProc.WM_CREATE:
+    virtual at rbp-.frame
+		 rq 4
+	.4	 rq 1
+	.5	 rq 1
+	.6	 rq 1
+	.7	 rq 1
+	.8	 rq 1
+	.9	 rq 1
+	.A	 rq 1
+	.B	 rq 1
+	.C	 rq 1
+	.D	 rq 1
+	.frame = NOT 15 AND ($-$$+15)
+		 rb $$+.frame-$ ; stack alignment
+	.RBP	 rq 1
+	.ret	 rq 1
+	.hWnd equ .8
+;	.hWnd    rq 1
+;	.uMsg	 rq 1
+;	.wParam  rq 1
+;	.lParam  rq 1
+    end virtual
+    enter .frame,0
+    mov [.hWnd],rcx
+;   mov [.uMsg],rdx
+;   mov [.wParam],r8
+;   mov [.lParam],r9
+;
+; create edit control covering the client area
+;
+    ; RCX is hWnd
+    lea edx,[.5] ; into creation params
+    call [user32.GetClientRect]
+    test eax,eax
+    jz .Error
+    mov eax,dword[.6+4] ; height
+
+;
+    mov ecx,WS_EX_ACCEPTFILES
+    lea edx,[_RE_CLASS]
+    lea r8,[xtext] ; text
+    mov r9d,WS_VSCROLL or WS_HSCROLL or ES_AUTOHSCROLL or ES_AUTOVSCROLL or \
+            ES_MULTILINE or ES_WANTRETURN or WS_CHILD or \
+            ES_NOHIDESEL or ES_SAVESEL or ES_DISABLENOSCROLL or WS_VISIBLE
+    and [.4],0 ; left
+    ;and [.5],0 ; top, cleared by GetClientRect
+    ; [.6], width set by GetClientRect
+    mov dword[.7],eax ; height
+    ; [.8], hWnd saved on entry above
+    and [.9],0 ; top
+    mov [.A],HINSTANCE
+;    mov [.B],rdi ; lpParam
+    call [user32.CreateWindowExW]
+    test eax,eax
+    jz .Error
+    mov [hWndEdit],rax
+;-------------------------------------------------------------------------------
+    ; create ribbon framework
+    lea eax,[g_pFramework] ; #32#
+    lea ecx,[CLSID_UIRibbonFramework] ; #32#
+    xor edx,edx
+    lea r8d,[rdx+1] ; CLSCTX_INPROC_SERVER
+    lea r9,[IID_IUIFramework]
+    mov [.4],rax
+    call [ole32.CoCreateInstance]
+    test eax,eax
+    js .Error
+
+    ; instantiate framework, pass hWnd and IUIApplication
+    mov rcx,[g_pFramework]
+    mov rdx,[.hWnd]
+    mov r8,[g_pApplication]
+    mov rax,[rcx]
+    call [rax+g_pFramework.Initialize]
+    test eax,eax
+    js .Error
+
+    mov rcx,[g_pFramework]
+    mov edx,HINSTANCE	  ; #32#
+    lea r8,[FASM_RIBBON]
+    mov rax,[rcx]
+    call [rax+g_pFramework.LoadUI]
+    test eax,eax
+    js .Error
+
+    xor eax,eax
+    leave
+    retn
+
+.Error:
+    mov rcx,[.hWnd]
+    call MessageBox.LastError
+    push -1 ; destroy window, terminate app
+    pop rax
+    leave
+    retn
+
+
+
+
+
+
+import\
+    comctl32,<\
+	InitCommonControlsEx\
+    >,\
+    gdi32,<\
+	CreateFontIndirectW,\
+	DeleteObject,\
+	SetDIBitsToDevice\
+    >,\
+    kernel32,<\
+	CreateThread,\
+	ExitProcess,\
+	FormatMessageW,\
+	GetCurrentProcess,\
+	GetCurrentThreadId,\
+	GetFileType,\
+	GetLastError,\
+	GetModuleHandleExW,\
+	GetStdHandle,\
+	GlobalMemoryStatus,\
+	LoadLibraryW,\
+	LocalFree,\
+	ReadFile,\
+	RemoveVectoredExceptionHandler,\
+	SetProcessWorkingSetSize,\
+	TerminateThread,\
+	VirtualAlloc,\
+	VirtualLock,\
+	WriteFile\
+    >,\
+    ole32,<\
+	CoCreateInstance,\
+	CoInitializeEx,\
+	CoUninitialize\
+    >,\
+    shlwapi,<\
+        SHCreateStreamOnFileEx\
+    >,\
+    user32,<\
+	AdjustWindowRectEx,\
+	CallNextHookEx,\
+	CreateWindowExW,\
+	DefWindowProcW,\
+        DestroyWindow,\
+	DispatchMessageW,\
+	GetClientRect,\
+	GetMessageW,\
+	GetParent,\
+	GetWindowRect,\
+	InvalidateRgn,\
+	KillTimer,\
+	LoadCursorW,\
+	LoadImageW,\
+	MessageBoxW,\
+	MoveWindow,\
+	PostQuitMessage,\
+	RegisterClassExW,\
+	SendMessageW,\
+	SetFocus,\
+	SetTimer,\
+	SetWindowsHookExW,\
+	TranslateMessage,\
+	UnhookWindowsHookEx,\
+	wsprintfA,\
+	wsprintfW\
+    >
+section '.rsrc' data readable resource from '.\Res\main.res'
+
+; Numerical identifiers for the resource data, these need to be defined HERE
+; and no where else...
+
+IDI_APPLICATION = 1

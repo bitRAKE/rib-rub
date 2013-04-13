@@ -1,0 +1,297 @@
+if used IApplication
+
+    align 64
+IApplication dq IApplication.vtbl
+
+.objects \
+    dd 1 ; fake first instance
+.GetCurrentContext \
+    dd 8 ; Id of the context map to use
+
+.vtbl dq \
+    .QueryInterface,\
+    .AddRef,\
+    .Release,\
+    .OnViewChanged,\
+    .OnCreateUICommand,\
+    .OnDestroyUICommand
+
+    align 64
+.QueryInterface:
+    test r8,r8
+    jz .E_POINTER
+
+    ; compare IIDs to those supported
+    GUID.CMP rdx,IID_IUIApplication
+    jz @F
+    GUID.CMP rdx,IID_IUnknown
+    jz @F
+    mov eax,$80004002 ; E_NOINTERFACE
+    retn
+
+@@: mov [r8],rcx
+    ; mov rax,[rcx]
+    ; call [rax+IUnknown.AddRef]
+    mov eax,1
+    lock xadd [.objects],eax
+    xor eax,eax
+    retn
+
+.E_POINTER:
+    mov eax,$80004003 ; E_POINTER
+    retn
+
+
+.AddRef:
+    mov eax,1
+    lock xadd [.objects],eax
+    add eax,1
+    retn
+
+
+.Release:
+    or eax,-1
+    lock xadd [.objects],eax
+    sub eax,1
+
+    ; free global resources if zero
+
+    retn
+
+
+;-------------------------------------------------------------------------------
+; MSDN: This callback only occurs for the Ribbon View (1) with a viewId of 0.
+IApplication.OnViewChanged:
+    virtual at rbp-.frame
+                     rq 4
+        .4           rq 1
+        .5           rq 1
+        .ppStream    rq 1
+        .frame = NOT 15 AND ($-$$+15)
+                rb $$+.frame-$ ; stack alignment
+        .RBP rq 1
+        .ret rq 1
+        .this        rq 1 ;*IApplication  rcx
+        .viewId      rq 1 ; UINT32        rdx
+        .typeID      rq 1 ; UI_VIEWTYPE   r8d
+        .view        rq 1 ;*IUnknown      r9   IUIRibbon
+        .verb        rd 2 ; UI_VIEWVERB
+        .uReasonCode rd 2 ; INT32
+    end virtual
+    sub r8d,1 ; UI_VIEWTYPE_RIBBON
+    enter .frame,0
+    mov eax,$80004001 ; E_NOTIMPL
+    or edx,r8d
+    jnz @F
+    sub [.verb],1                       ; UI_VIEWVERB_DESTROY=1
+    jz .DESTROY
+    jc .CREATE                          ; UI_VIEWVERB_CREATE=0
+    sub [.verb],1                       ; UI_VIEWVERB_SIZE=2
+    jnz @F                              ;~^none of those branches taken
+.SIZE:
+    virtual at .this
+      .rect RECT
+      .cy   rd 1
+    end virtual
+    mov rcx,[g_pRibbon]
+    lea rdx,[.cy]
+    mov rax,[rcx]
+    call [rax+g_pRibbon.GetHeight]
+    test eax,eax
+    js @F
+
+    ; Update client respective of new size, reduce flicker by exiting if
+    ; height has not changed.
+    mov eax,[.cy]
+    cmp eax,[uRibbon.H]
+    jz .paranoid
+    mov [uRibbon.H],eax
+
+    mov rcx,[hWndMain]
+    jrcxz .paranoid
+    lea edx,[.rect]
+    call [user32.GetClientRect]
+    test eax,eax
+    jz @F ; S_OK
+
+    mov eax,[.rect.bottom] ; height++ DWM
+    mov rcx,[hWndEdit]
+    jrcxz .paranoid
+    xor edx,edx ; left edge
+    mov r8d,[uRibbon.H]
+    mov r9d,[.rect.right] ; width = right edge++
+    sub eax,[uRibbon.H] ;rc.bottom - m_uHeight
+    mov dword[.4],eax
+    or [.5],-1
+    call [user32.MoveWindow]
+.paranoid:
+    xor eax,eax ; S_OK
+@@: leave
+    retn
+
+
+.CREATE:
+    mov rax,[r9]
+    mov rcx,r9
+    lea edx,[IID_IUIRibbon]
+    lea r8,[g_pRibbon]
+    call [rax+g_pRibbon.QueryInterface]
+    test eax,eax
+    js @B
+
+    lea eax,[.ppStream]
+    lea ecx,[pszFile.Settings]
+    mov edx,STGM_READ ; read only
+    xor r8,r8
+    xor r9,r9
+    mov [.4],r8
+    mov [.5],rax
+    call [shlwapi.SHCreateStreamOnFileEx]
+    test eax,eax
+    js .CREATE.no_settings ; load defaults?
+
+    mov rcx,[g_pRibbon]
+    mov rax,[rcx]
+    mov rdx,[.ppStream]
+    call [rax+g_pRibbon.LoadSettingsFromStream]
+;    test eax,eax
+;    js .FAIL ; Ribbon->LoadSettingsFromStream failure with file present.
+    jmp .ppStream.Release
+
+.DESTROY: ; save ribbon settings, release IRibbon
+    lea eax,[.ppStream]
+    lea ecx,[pszFile.Settings]
+    mov edx,STGM_CREATE or STGM_WRITE
+    mov r8d,FILE_ATTRIBUTE_NORMAL
+    xor r9,r9 ; FALSE ; file (re)created anyhow
+    and [.4],0
+    mov [.5],rax
+    call [shlwapi.SHCreateStreamOnFileEx]
+    test eax,eax
+    js .DESTROY.no_settings ; no access: device/file?
+; STGM_CREATE removes prior contents of stream of same name
+    mov rcx,[g_pRibbon]
+    mov rax,[rcx]
+    mov rdx,[.ppStream]
+    call [rax+g_pRibbon.SaveSettingsToStream]
+
+    mov rcx,[g_pRibbon]
+    mov rax,[rcx]
+    call [rax+g_pRibbon.Release]
+
+.ppStream.Release:
+    mov rcx,[.ppStream]
+    mov rax,[rcx]
+    call [rax+IUNKNOWN.Release]
+;    test eax,eax
+;    js .FAIL
+.DESTROY.no_settings:
+    ; only if user has requested to save settings should there be an alert
+.CREATE.no_settings:
+    xor eax,eax ; S_OK
+@@: leave
+    retn
+
+
+;-------------------------------------------------------------------------------
+IApplication.OnCreateUICommand:
+    virtual at rsp
+        .ret            rq 1
+        .this           rq 1 ;*IApplication       rcx
+        .commandId      rq 1 ; UINT32             rdx
+        .typeID         rq 1 ; UI_COMMANDTYPE     r8
+        .ppCmdHandler   rq 1 ;**IUICommandHandler r9
+    end virtual
+
+; Universal handler based on top nibble of commandID (=typeID).
+
+    cmp r8,1+UI_COMMANDTYPE_COLORCOLLECTION
+    jnc @F
+    bt [Types_that_get_handlers],r8
+    jnc @F
+
+    mov rcx,[g_pCommandHandler]
+    mov rax,[rcx]
+    lea edx,[IID_IUICommandHandler]
+    mov r8,r9
+    jmp [rax+g_pCommandHandler.QueryInterface]
+
+
+;-------------------------------------------------------------------------------
+IApplication.OnDestroyUICommand:
+    virtual at rsp
+        .ret rq 1
+        .this           rq 1 ;*IApplication       rcx
+        .commandId      rq 1 ; UINT32             rdx
+        .typeID         rq 1 ; UI_COMMANDTYPE     r8
+        .pCmdHandler    rq 1 ;*IUICommandHandler  r9
+    end virtual
+
+; just remove references
+
+    xchg rcx,r9
+    jrcxz @F
+    mov rax,[rcx]
+    jmp [rax+IUNKNOWN.Release]
+
+@@: mov eax,$80004001 ; E_NOTIMPL
+    retn
+
+
+    
+    
+    
+    
+if 0
+; Since command type isn't specified in command handler, create a different
+; handler for each type of command. If no commandID's overlap then a single
+; handler is sufficient. Id's are limited to [2,0xEA5F] interval.
+;
+; Making the top nibble equal to the command type would allow for 4096 of each
+; type and use of a single handler. Therefore it seems extreemly rare to need
+; more than one!
+;
+;   0002-0FFF   unknown : ?
+;   1000-1FFF   group
+;   2000-2FFF   action : button
+;   3000-3FFF   anchor
+;   4000-4FFF   context : tab group
+;   5000-5FFF   collection
+;   6000-6FFF   commandcollection
+;   7000-7FFF   decimal : spinner
+;   8000-8FFF   boolean : toggle, check
+;   9000-9FFF   font
+;   A000-AFFF   recentitems
+;   B000-BFFF   coloranchor
+;   C000-CFFF   colorcollection : ?
+;   D000-DFFF
+;   E000-EA5F
+
+macro M [handler] {
+  handler dq .vtbl
+
+  .vtbl dq \
+    ICommandHandler.QueryInterface,\
+    ICommandHandler.AddRef,\
+    ICommandHandler.Release,\
+    handler#.Execute,\
+    handler#.UpdateProperty
+}
+M .UI_COMMANDTYPE_UNKNOWN,\ ; The type of command is not known.
+  .UI_COMMANDTYPE_GROUP,\ ; Group
+  .UI_COMMANDTYPE_ACTION,\ ; Button, Help Button
+  .UI_COMMANDTYPE_ANCHOR,\ ; Application Menu, Drop-Down Button, Split Button, Tab
+  .UI_COMMANDTYPE_CONTEXT,\ ; Tab Group
+  .UI_COMMANDTYPE_COLLECTION,\ ; Combo Box, Drop-Down Gallery, In-Ribbon Gallery, Split Button Gallery
+  .UI_COMMANDTYPE_COMMANDCOLLECTION,\ ; Drop-Down Gallery, In-Ribbon Gallery, Quick Access Toolbar, Split Button Gallery
+  .UI_COMMANDTYPE_DECIMAL,\ ; Spinner
+  .UI_COMMANDTYPE_BOOLEAN,\ ; Toggle Button, Check Box
+  .UI_COMMANDTYPE_FONT,\ ; Font Control
+  .UI_COMMANDTYPE_RECENTITEMS,\ ; Recent Items
+  .UI_COMMANDTYPE_COLORANCHOR,\ ; Drop-Down Color Picker
+  .UI_COMMANDTYPE_COLORCOLLECTION ; {not supported by any framework controls}
+
+end if    
+    
+
+end if ; used IApplication
