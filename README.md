@@ -17,13 +17,10 @@ http://www.bilsen.com/windowsribbon/index.shtml
 
 
 To Build:
-
-1) Set paths in build.cmd to point to UICC, RC, FASM
-2) execute build.cmd
-
+* Set paths in build.cmd to point to UICC, RC, FASM
+* execute build.cmd
 
 A note about the coding style: I do not use the supplied FASM macros for 64-bit coding, and have developed my own syle. An approach which helps me stay at the instruction level, but requires mindfulness of proceedural scoping to maintain stack alignment. It's much easier than it sounds with practice.
 
-This work is licensed under a Creative Commons
-Attribution-ShareAlike 3.0 Unported License.
+This work is licensed under a Creative Commons Attribution-ShareAlike 3.0 Unported License.
 http://creativecommons.org/licenses/by-sa/3.0/
