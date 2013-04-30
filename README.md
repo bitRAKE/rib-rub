@@ -1,4 +1,4 @@
-## rib-rub v0.01, April 13, 2013.
+## rib-rub v0.01, April 29, 2013.
 
 This is just my attempt to understand the utility of the native (fluent) Ribbon control in Windows using amd64 assembly language, the FASM dialect.
 
@@ -15,9 +15,6 @@ Luckily, I stumbled upon Erik Van Bilsen's [Ribbon Designer](http://www.bilsen.c
 
 
 
-<<<<<<< HEAD
-To Build:
-=======
 
 _Requirements:_
 * Windows Vista or greater, 64-bit
@@ -25,18 +22,11 @@ _Requirements:_
 * [FASM](http://www.flatassembler.net)
 
 _To Build:_
->>>>>>> #2
 * Set paths in build.cmd to point to UICC, RC, FASM
 * execute build.cmd
 
 ___
 A note about the coding style: I do not use the supplied FASM macros for 64-bit coding, and have developed my own syle. An approach which helps me stay at the instruction level, but requires mindfulness of proceedural scoping to maintain stack alignment. It's much easier than it sounds with practice.
-<<<<<<< HEAD
-
-This work is licensed under a Creative Commons Attribution-ShareAlike 3.0 Unported License.
-http://creativecommons.org/licenses/by-sa/3.0/
-=======
 ___
 This work is licensed under a Creative Commons
 [Attribution-ShareAlike 3.0 Unported License](http://creativecommons.org/licenses/by-sa/3.0/).
->>>>>>> #2
